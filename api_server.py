@@ -18,12 +18,15 @@ Environment variables (same .env as the rest of the project):
 import os
 import json
 import asyncio
+import time
+import re
 import httpx
+from collections import defaultdict
 from dotenv import load_dotenv
 
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -40,13 +43,48 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# Allow frontend (any origin during dev; tighten in production)
+# CORS: Allow local dev origins and production website domain if specified
+allowed_origins = [
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+    "http://localhost:3000",
+]
+env_origin = os.environ.get("ALLOWED_ORIGIN")
+if env_origin:
+    allowed_origins.append(env_origin)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins if env_origin else ["*"],
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
+
+# Simple sliding window rate limiting (IP-based, in-memory)
+# Format: {ip_address: [timestamps_of_requests]}
+request_history = defaultdict(list)
+RATE_LIMIT_WINDOW = 60  # seconds
+RATE_LIMIT_MAX_REQUESTS = 15  # maximum requests per window
+
+@app.middleware("http")
+async def rate_limit_middleware(request: Request, call_next):
+    # Only rate limit API queries (/chat and /api/suggest)
+    path = request.url.path
+    if path in ["/chat", "/api/suggest"]:
+        client_ip = request.client.host or "unknown"
+        now = time.time()
+        
+        # Filter timestamps to keep only those within the window
+        timestamps = request_history[client_ip]
+        request_history[client_ip] = [t for t in timestamps if now - t < RATE_LIMIT_WINDOW]
+        
+        if len(request_history[client_ip]) >= RATE_LIMIT_MAX_REQUESTS:
+            log.warning(f"Rate limit exceeded for IP: {client_ip} on path: {path}")
+            raise HTTPException(status_code=429, detail="Too many requests. Please try again in a minute.")
+            
+        request_history[client_ip].append(now)
+        
+    return await call_next(request)
 
 # ── Serve frontend static files ───────────────────────────────────────────────
 
@@ -95,10 +133,19 @@ async def chat(req: ChatRequest):
     Send a query to the GitOracle single ReAct agent.
     Returns the answer and a log of any tool calls made.
     """
-    if not req.query.strip():
+    # Basic input sanitization
+    clean_query = req.query.strip()
+    if not clean_query:
         raise HTTPException(status_code=400, detail="Query cannot be empty.")
-
-    log.info(f"Chat request: {req.query[:80]}")
+        
+    # Enforce reasonable length limit to prevent buffer / context overload abuses
+    if len(clean_query) > 500:
+        raise HTTPException(status_code=400, detail="Query exceeds maximum allowed length of 500 characters.")
+        
+    # Strip any control characters or shell patterns just to be safe
+    clean_query = re.sub(r'[\x00-\x1f\x7f-\x9f]', '', clean_query)
+    
+    log.info(f"Chat request (sanitized): {clean_query[:80]}")
 
     try:
         # Import here so the module-level CFG is already loaded
