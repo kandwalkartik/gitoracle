@@ -247,33 +247,15 @@
       #input-area { padding: 12px 16px 16px; }
       #welcome h1 { font-size: 24px; }
     }
-    /* ── README rich card ── */
-    .readme-card {
-      border: 1px solid var(--border); border-radius: var(--radius);
-      overflow: hidden; margin-top: 12px; animation: fadeUp 0.4s ease;
-      background: var(--bg);
-    }
-    .readme-card-header {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 10px 16px; background: var(--bg2); border-bottom: 1px solid var(--border);
-    }
-    .readme-card-title { font-size: 13px; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 8px; }
-    .readme-card-link {
-      font-size: 12px; color: var(--accent); text-decoration: none;
-      border: 1px solid rgba(47,129,247,0.3); border-radius: 6px;
-      padding: 3px 10px; transition: all 0.2s;
-    }
-    .readme-card-link:hover { background: rgba(47,129,247,0.1); }
-    .readme-card-body { padding: 14px 16px; display: flex; flex-direction: column; gap: 14px; }
-    .readme-intro { font-size: 13.5px; line-height: 1.7; color: var(--text-muted); }
-    .readme-images { display: flex; gap: 10px; flex-wrap: wrap; }
+    /* ── README Assets nested inside Summary ── */
+    .readme-images { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; border-top: 1px solid var(--border); padding-top: 14px; }
     .readme-images img {
       max-height: 160px; max-width: 100%; border-radius: 8px;
       border: 1px solid var(--border); object-fit: contain; background: var(--bg2);
-      cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
+      cursor: zoom-in; transition: transform 0.2s, box-shadow 0.2s;
     }
     .readme-images img:hover { transform: scale(1.02); box-shadow: var(--shadow); }
-    .readme-table-wrap { overflow-x: auto; }
+    .readme-table-wrap { overflow-x: auto; margin-top: 16px; border-top: 1px solid var(--border); padding-top: 14px; }
     .readme-table {
       width: 100%; border-collapse: collapse; font-size: 12.5px;
       font-family: 'JetBrains Mono', monospace;
@@ -482,28 +464,31 @@ async function sendQuery(q) {
   q = (q || input.value).trim();
   if (!q) return;
 
-  // Client-side off-topic guard
-  const lower = q.toLowerCase();
-  const githubKeywords = [
-    "repo", "repository", "github", "git", "developer", "dev", "org", "organisation",
-    "organization", "star", "fork", "issue", "release", "commit", "contributor",
-    "trending", "tell me about", "who is", "compare", "open issues", "latest release",
-    "pull request", "pr", "license", "language", "code", "source", "project", "package",
-    "npm", "pypi", "library", "framework", "open source", "opensource", "/"
-  ];
-  const hasGitHubContext = githubKeywords.some(kw => lower.includes(kw));
-  if (!hasGitHubContext) {
-    // Show a friendly redirect message without hitting the API
-    welcome.style.display = "none";
-    appendUserMsg(q);
-    appendAgentMsg(
-      "I'm GitOracle — I only answer questions about GitHub repositories, developers, and open-source projects.\n\nTry asking:\n• Tell me about torvalds/linux\n• Who is gvanrossum?\n• Trending Python AI repos\n• Compare facebook/react with vuejs/vue",
-      [], "GitOracle", null
-    );
-    input.value = "";
-    autoResize();
-    renderChips();
-    return;
+  // Client-side off-topic guard (ONLY triggers on the first query of the session)
+  const isFirstQuery = (document.querySelectorAll(".msg-user").length === 0);
+  if (isFirstQuery) {
+    const lower = q.toLowerCase();
+    const githubKeywords = [
+      "repo", "repository", "github", "git", "developer", "dev", "org", "organisation",
+      "organization", "star", "fork", "issue", "release", "commit", "contributor",
+      "trending", "tell me about", "who is", "compare", "open issues", "latest release",
+      "pull request", "pr", "license", "language", "code", "source", "project", "package",
+      "npm", "pypi", "library", "framework", "open source", "opensource", "/"
+    ];
+    const hasGitHubContext = githubKeywords.some(kw => lower.includes(kw));
+    if (!hasGitHubContext) {
+      // Show a friendly redirect message without hitting the API
+      welcome.style.display = "none";
+      appendUserMsg(q);
+      appendAgentMsg(
+        "I'm GitOracle — I only answer questions about GitHub repositories, developers, and open-source projects.\n\nTry asking:\n• Tell me about torvalds/linux\n• Who is gvanrossum?\n• Trending Python AI repos\n• Compare facebook/react with vuejs/vue",
+        [], "GitOracle", null
+      );
+      input.value = "";
+      autoResize();
+      renderChips();
+      return;
+    }
   }
 
   // Hide welcome
@@ -535,14 +520,14 @@ async function sendQuery(q) {
     }
 
     const data = await res.json();
-    // Try to extract owner/repo from query for GitHub link + README card
+    // Try to extract owner/repo from query for GitHub link + README card integration
     const repoMatch = q.match(/(?:about|for|on)\s+([\w.-]+)\/([\w.-]+)/i)
                    || q.match(/^([\w.-]+)\/([\w.-]+)$/);
     const repoPath = repoMatch ? `${repoMatch[1]}/${repoMatch[2]}` : null;
     const msgWrap = appendAgentMsg(data.answer, data.tool_calls || [], data.agent || "GitOracle", repoPath);
 
     if (repoPath) {
-      fetchReadmeCard(repoMatch[1], repoMatch[2], msgWrap);
+      integrateReadmeContent(repoMatch[1], repoMatch[2], msgWrap);
     }
 
   } catch (e) {
@@ -554,39 +539,34 @@ async function sendQuery(q) {
   }
 }
 
-// ── README rich card ─────────────────────────────────────────────────────────
-async function fetchReadmeCard(owner, repo, msgWrap) {
+// ── README content integration ────────────────────────────────────────────────
+async function integrateReadmeContent(owner, repo, msgWrap) {
   try {
     const r = await fetch(`${API_BASE}/api/readme?owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}`);
     if (!r.ok) return;
     const d = await r.json();
-    if (!d.intro && !d.images.length && !d.tables.length) return;
+    
+    const bodyEl = msgWrap.querySelector(".msg-agent-body");
+    if (!bodyEl) return;
 
-    const card = document.createElement("div");
-    card.className = "readme-card";
-
-    let bodyHTML = "";
-    if (d.intro) {
-      bodyHTML += `<div class="readme-intro">${renderMarkdown(d.intro)}</div>`;
-    }
+    let html = "";
     if (d.images && d.images.length > 0) {
-      bodyHTML += `<div class="readme-images">${
-        d.images.map(img => `<img src="${escAttr(img.src)}" alt="${escAttr(img.alt)}" loading="lazy" onerror="this.style.display='none'" />`).join("")
-      }</div>`;
+      html += `<div class="readme-images">
+        <div style="font-size: 11px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; letter-spacing: 0.5px; width: 100%;">🖼️ Diagrams & Media from README</div>
+        ${d.images.map(img => `<img src="${escAttr(img.src)}" alt="${escAttr(img.alt)}" loading="lazy" onclick="window.open(this.src)" onerror="this.style.display='none'" />`).join("")}
+      </div>`;
     }
     if (d.tables && d.tables.length > 0) {
-      bodyHTML += d.tables.map(t => `<div class="readme-table-wrap">${t}</div>`).join("");
+      html += `<div class="readme-table-wrap">
+        <div style="font-size: 11px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; letter-spacing: 0.5px;">📊 Key Reference Tables</div>
+        ${d.tables.map(t => `<div style="margin-bottom: 10px;">${t}</div>`).join("")}
+      </div>`;
     }
 
-    card.innerHTML = `
-      <div class="readme-card-header">
-        <div class="readme-card-title">📄 README · ${escHtml(owner)}/${escHtml(repo)}</div>
-        <a class="readme-card-link" href="https://github.com/${escAttr(owner)}/${escAttr(repo)}" target="_blank" rel="noopener">↗ View on GitHub</a>
-      </div>
-      <div class="readme-card-body">${bodyHTML}</div>
-    `;
-    msgWrap.appendChild(card);
-    scrollBottom();
+    if (html) {
+      bodyEl.insertAdjacentHTML("beforeend", html);
+      scrollBottom();
+    }
   } catch {}
 }
 
