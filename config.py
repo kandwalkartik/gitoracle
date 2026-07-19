@@ -104,7 +104,7 @@ class Config:
     ollama_base_url: str = "http://localhost:11434/v1"
     ollama_model: str = "qwen2.5:3b"
     groq_api_key: str = ""
-    groq_model: str = "llama-3.3-70b-versatile"
+    groq_model: str = "llama-3.1-8b-instant"
 
     # -- Cache ----------------------------------------------------------------
     cache_ttl_seconds: int = 60

@@ -234,6 +234,16 @@
     #send-btn:active { transform: scale(0.97); }
     #send-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 
+    #reset-btn {
+      width: 50px; height: 50px; border-radius: var(--radius);
+      border: 1px solid var(--border); background: var(--bg2);
+      color: var(--text-muted); font-size: 20px; cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    #reset-btn:hover { background: var(--bg3); color: var(--text); border-color: var(--accent); }
+    #reset-btn:active { transform: scale(0.95); }
+
     .input-hint { font-size: 11px; color: var(--text-dim); margin-top: 8px; text-align: center; }
 
     /* Animations */
@@ -321,6 +331,7 @@
 
       <!-- Input row -->
       <div class="input-row">
+        <button id="reset-btn" title="Reset Session / Clear Context">↺</button>
         <textarea id="query-input" placeholder="Ask about any GitHub repo, developer, or trend..." rows="1"></textarea>
         <button id="send-btn" title="Send">➤</button>
       </div>
@@ -333,6 +344,7 @@
 <script>
 // ── Config ───────────────────────────────────────────────────────────────────
 const API_BASE = window.location.origin;  // same server
+let currentSessionId = "gitoracle_session_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);
 
 // ── Trending repos ─────────────────────────────────────────────────────────────
 const TOP_REPOS = [
@@ -508,7 +520,7 @@ async function sendQuery(q) {
     const res = await fetch(`${API_BASE}/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query: q }),
+      body: JSON.stringify({ query: q, session_id: currentSessionId }),
     });
 
     loader.remove();
@@ -525,10 +537,6 @@ async function sendQuery(q) {
                    || q.match(/^([\w.-]+)\/([\w.-]+)$/);
     const repoPath = repoMatch ? `${repoMatch[1]}/${repoMatch[2]}` : null;
     const msgWrap = appendAgentMsg(data.answer, data.tool_calls || [], data.agent || "GitOracle", repoPath);
-
-    if (repoPath) {
-      integrateReadmeContent(repoMatch[1], repoMatch[2], msgWrap);
-    }
 
   } catch (e) {
     loader.remove();
@@ -694,6 +702,28 @@ document.addEventListener("click", e => {
 
 // Send button
 sendBtn.addEventListener("click", () => sendQuery());
+
+// Reset Session / Clear Context button
+const resetBtn = document.getElementById("reset-btn");
+resetBtn.addEventListener("click", () => {
+  // 1. Remove all messages
+  const messages = chatArea.querySelectorAll(".message-wrap");
+  messages.forEach(m => m.remove());
+
+  // 2. Show welcome screen
+  welcome.style.display = "block";
+
+  // 3. Rotate chips
+  renderChips();
+
+  // 4. Generate new session ID for backend zone reset
+  currentSessionId = "gitoracle_session_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);
+
+  // 5. Reset input
+  input.value = "";
+  autoResize();
+  input.focus();
+});
 
 // Auto-resize textarea
 function autoResize() {

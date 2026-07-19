@@ -281,9 +281,12 @@ def _parse_readme(raw_md: str, owner: str, repo: str) -> dict:
             url = url[2:]
         return f"{base_raw}/{url}"
 
-    # Images
+    # Images (Markdown and HTML <img> tags)
     img_pattern = _re.compile(r'!\[([^\]]*)\]\(([^)]+)\)')
+    html_img_pattern = _re.compile(r'<img[^>]+src=["\']([^"\']+)["\']', _re.IGNORECASE)
+
     images = []
+    # 1. Parse markdown images
     for alt, src in img_pattern.findall(raw_md):
         src = fix_url(src)
         if any(x in src.lower() for x in ["shields.io", "badge", "travis", "circleci", "codecov", "gitter"]):
@@ -291,6 +294,17 @@ def _parse_readme(raw_md: str, owner: str, repo: str) -> dict:
         images.append({"alt": alt or repo, "src": src})
         if len(images) >= 3:
             break
+
+    # 2. Parse HTML images if we have space
+    if len(images) < 3:
+        for src in html_img_pattern.findall(raw_md):
+            src = fix_url(src)
+            if any(x in src.lower() for x in ["shields.io", "badge", "travis", "circleci", "codecov", "gitter"]):
+                continue
+            if not any(img["src"] == src for img in images):
+                images.append({"alt": repo, "src": src})
+            if len(images) >= 3:
+                break
 
     # Tables
     table_pattern = _re.compile(r'(\|.+\|[\r\n]+\|[-| :]+\|[\r\n]+(?:\|.+\|[\r\n]*)+)', _re.MULTILINE)
@@ -369,6 +383,21 @@ async def health():
         "backend": CFG.llm_backend,
         "github_auth": bool(os.environ.get("GITHUB_TOKEN")),
     }
+
+
+# ── Metrics endpoint ──────────────────────────────────────────────────────────
+
+@app.get("/api/metrics/keys")
+async def get_key_metrics():
+    """Exposes live load balancer metrics for our API keys."""
+    try:
+        from model_client import get_client_and_model
+        client, _, backend = get_client_and_model()
+        if backend == "groq" and hasattr(client, "get_metrics"):
+            return client.get_metrics()
+        return {"backend": backend, "pool": {}, "keys": []}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ── Entry point ───────────────────────────────────────────────────────────────

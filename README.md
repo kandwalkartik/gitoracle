@@ -10,13 +10,17 @@ GitOracle is a production-quality agentic AI system that answers questions about
 ```
 User Input
     │
-    ├─► agent_core.py  (Single ReAct Agent + HITL)
+    ├─► api_server.py (FastAPI Web App + CORS + Auto-Search + Reset Context)
+    │
+    ├─► agent_core.py (Single ReAct Agent + HITL + Zonal Anchoring)
+    │       │
+    │       ├─► model_client.py (LLMLoadBalancer) ──► Groq API Client Pool (O(1) Failover)
     │       │
     │       └─► mcp_bridge.py ──► mcp_server.py ──► GitHub REST API
     │                                   │
     │                               cache.py (TTL)
     │
-    └─► langgraph_agent.py  (Multi-Agent Router)
+    └─► langgraph_agent.py (Multi-Agent Router)
             │
             ├─► Chronicle   (Repo Analyst)
             ├─► Sentinel    (Issue Triage)
@@ -34,6 +38,8 @@ User Input
 | `conversation_store.py` | JSON session persistence across restarts |
 | `health_check.py` | Pre-flight connectivity check |
 | `cli.py` | Unified project entry point |
+| `model_client.py` | LLMLoadBalancer with O(1) scheduling, monotonic cooldown failover, and metrics |
+| `api_server.py` | FastAPI backend with autocomplete suggestion API and diagnostic key metrics |
 | `a2a_card.py` | A2A agent card for external discoverability |
 | `param_test.py` | LLM parameter optimiser (temperature + top_p grid search) |
 
@@ -51,9 +57,9 @@ Open `.env` and fill in your values:
 ```
 GITHUB_TOKEN=ghp_your_token_here      # optional but recommended (5,000 req/hr)
 LLM_BACKEND=groq                      # "groq" (cloud) or "ollama" (local)
-GROQ_API_KEY=gsk_your_key_here        # required if LLM_BACKEND=groq
+GROQ_API_KEY=gsk_key1,gsk_key2,...    # Comma-separated list of Groq keys for O(1) failover load balancing
 ```
-Get a free Groq key at: **console.groq.com** → API Keys
+Get free Groq keys at: **console.groq.com** → API Keys (you can add multiple keys separated by commas for failover support).
 
 Get a free GitHub token at: **github.com** → Settings → Developer settings → Personal access tokens → Tokens (classic) → tick `public_repo`
 
