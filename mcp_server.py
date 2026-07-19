@@ -133,6 +133,35 @@ def get_repo_details(owner: str, repo: str) -> str:
 
 
 @mcp.tool()
+def get_repo_readme(owner: str, repo: str) -> str:
+    """Get the README.md content of a GitHub repository to read detailed project summaries and instructions.
+
+    Args:
+        owner: Repository owner, e.g. 'facebook'
+        repo:  Repository name, e.g. 'react'
+    """
+    status, data = _cached(f"/repos/{owner}/{repo}/readme")
+    if status != 200:
+        return f"README file not found or couldn't be loaded for {owner}/{repo}."
+
+    download_url = data.get("download_url")
+    if not download_url:
+        return "README download url not available."
+
+    try:
+        r = httpx.get(download_url, timeout=10, follow_redirects=True)
+        if r.status_code == 200:
+            content = r.text
+            # Limit characters to avoid model context overflow
+            if len(content) > 6000:
+                return content[:6000] + "\n\n... (README content truncated to 6,000 characters) ..."
+            return content
+        return f"Failed to download README content (HTTP {r.status_code})."
+    except Exception as e:
+        return f"Error downloading README: {e}"
+
+
+@mcp.tool()
 def list_open_issues(owner: str, repo: str, limit: int = 5) -> str:
     """List currently open issues for a GitHub repository.
 
