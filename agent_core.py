@@ -87,6 +87,18 @@ def _trim_history(history: list) -> list:
     return history
 
 
+class MockFunction:
+    def __init__(self, name: str, arguments: str):
+        self.name = name
+        self.arguments = arguments
+
+class MockToolCall:
+    def __init__(self, id: str, name: str, arguments: str):
+        self.id = id
+        self.type = "function"
+        self.function = MockFunction(name, arguments)
+
+
 class GitOracleAgent:
     """Single ReAct agent with persistent memory and optional human approval gate."""
 
@@ -136,6 +148,28 @@ class GitOracleAgent:
 
                 msg = response.choices[0].message
                 finish_reason = response.choices[0].finish_reason
+
+                # --- Fallback Parser for raw text tool calls (e.g. Ollama/Qwen 'brtc') ---
+                raw_calls = []
+                content = msg.content or ""
+                if "{" in content and ("name" in content or "arguments" in content):
+                    import re
+                    matches = re.findall(r'(\{\s*"name"\s*:.*?\})', content, re.DOTALL)
+                    for match in matches:
+                        try:
+                            data = json.loads(match)
+                            if "name" in data:
+                                tc_id = f"call_raw_{loop_num}_{len(raw_calls)}"
+                                args_val = data.get("arguments", {})
+                                args_str = json.dumps(args_val) if isinstance(args_val, dict) else str(args_val)
+                                raw_calls.append(MockToolCall(tc_id, data["name"], args_str))
+                        except Exception as parse_err:
+                            log.debug(f"Failed parsing raw tool call match: {parse_err}")
+                
+                if raw_calls:
+                    log.info(f"Ollama/Qwen Fallback Parser: extracted {len(raw_calls)} raw tool call(s) from content.")
+                    msg.tool_calls = raw_calls
+                    finish_reason = "tool_calls"
 
                 # ── Final answer: no tool needed ──────────────────────────
                 if finish_reason != "tool_calls" or not msg.tool_calls:
