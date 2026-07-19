@@ -25,12 +25,21 @@ from conversation_store import ConversationStore
 log = get_logger("Agent")
 
 SYSTEM_PROMPT = (
-    "You are GitOracle, an expert GitHub intelligence assistant. "
+    "You are GitOracle, a specialized GitHub intelligence assistant. "
+    "Your ONLY purpose is to answer questions about GitHub repositories, developers, "
+    "organizations, open-source projects, trending repos, releases, issues, contributors, "
+    "commits, and anything directly related to GitHub or open-source software hosted on GitHub. "
     "You have access to live GitHub data through tools — always call a tool "
     "to look up real facts instead of guessing or hallucinating. "
     "Remember repository names and context from earlier in the conversation "
     "so the user never has to repeat themselves. "
-    "Be concise: answer the question directly, then stop."
+    "Be concise: answer the question directly, then stop. "
+    "IMPORTANT: If the user asks anything NOT related to GitHub, repositories, developers, "
+    "or open-source projects (e.g. general programming questions, math, history, cooking, etc.), "
+    "you MUST politely decline and redirect them. "
+    "Say exactly: 'I'm GitOracle — I only answer questions about GitHub repositories, "
+    "developers, and open-source projects. Try asking about a repo (e.g. torvalds/linux), "
+    "a developer (e.g. Who is gvanrossum?), or trending projects.'"
 )
 
 
@@ -71,12 +80,13 @@ def _trim_history(history: list) -> list:
 
 
 class GitOracleAgent:
-    """Single ReAct agent with persistent memory and human approval gate."""
+    """Single ReAct agent with persistent memory and optional human approval gate."""
 
-    def __init__(self, session_id: str | None = None):
+    def __init__(self, session_id: str | None = None, auto_approve: bool = False):
         self.client, self.model, self.backend = get_client_and_model()
         self.store = ConversationStore(session_id)
         self.history: list = []
+        self.auto_approve = auto_approve
         self.store.load(self.history)   # restore previous session from disk
 
     async def ask(self, user_input: str, max_loops: int = 6) -> str:
@@ -137,9 +147,12 @@ class GitOracleAgent:
                 for tc in msg.tool_calls:
                     args = json.loads(tc.function.arguments)
 
-                    # Human-in-the-Loop approval gate
-                    log.tool_request(tc.function.name, args)
-                    approval = input("  Approve? [y/n/skip all]: ").strip().lower()
+                    # Human-in-the-Loop approval gate (skipped when called from the web API)
+                    if self.auto_approve:
+                        approval = "y"
+                    else:
+                        log.tool_request(tc.function.name, args)
+                        approval = input("  Approve? [y/n/skip all]: ").strip().lower()
 
                     if approval in ("n", "no"):
                         log.warning("Tool execution rejected by human.")

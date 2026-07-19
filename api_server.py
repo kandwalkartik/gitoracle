@@ -70,7 +70,7 @@ RATE_LIMIT_MAX_REQUESTS = 15  # maximum requests per window
 async def rate_limit_middleware(request: Request, call_next):
     # Only rate limit API queries (/chat and /api/suggest)
     path = request.url.path
-    if path in ["/chat", "/api/suggest"]:
+    if path in ["/chat"]:
         client_ip = request.client.host or "unknown"
         now = time.time()
         
@@ -163,7 +163,7 @@ async def chat(req: ChatRequest):
 
         mcp_bridge.call_mcp_tool = _instrumented_call
 
-        agent = GitOracleAgent(session_id=req.session_id)
+        agent = GitOracleAgent(session_id=req.session_id, auto_approve=True)
         answer = await agent.ask(req.query)
 
         # Restore original
@@ -260,6 +260,103 @@ async def suggest(q: str = ""):
             "avatar": avatar,
             "results": repo_list,
         }
+
+
+# ── README endpoint ───────────────────────────────────────────────────────────
+
+import base64
+
+def _parse_readme(raw_md: str, owner: str, repo: str) -> dict:
+    """Extract useful sections from raw README markdown."""
+    import re as _re
+    base_raw = f"https://raw.githubusercontent.com/{owner}/{repo}/HEAD"
+
+    def fix_url(url: str) -> str:
+        url = url.strip()
+        if url.startswith("http://") or url.startswith("https://"):
+            if "github.com" in url and "/blob/" in url:
+                url = url.replace("github.com", "raw.githubusercontent.com").replace("/blob/", "/")
+            return url
+        if url.startswith("./"):
+            url = url[2:]
+        return f"{base_raw}/{url}"
+
+    # Images
+    img_pattern = _re.compile(r'!\[([^\]]*)\]\(([^)]+)\)')
+    images = []
+    for alt, src in img_pattern.findall(raw_md):
+        src = fix_url(src)
+        if any(x in src.lower() for x in ["shields.io", "badge", "travis", "circleci", "codecov", "gitter"]):
+            continue
+        images.append({"alt": alt or repo, "src": src})
+        if len(images) >= 3:
+            break
+
+    # Tables
+    table_pattern = _re.compile(r'(\|.+\|[\r\n]+\|[-| :]+\|[\r\n]+(?:\|.+\|[\r\n]*)+)', _re.MULTILINE)
+    tables_md = table_pattern.findall(raw_md)
+
+    def md_table_to_html(md_tbl: str) -> str:
+        lines = [l.strip() for l in md_tbl.strip().splitlines() if l.strip()]
+        if len(lines) < 2:
+            return ""
+        header_cells = [c.strip() for c in lines[0].strip("|").split("|")]
+        html = '<table class="readme-table"><thead><tr>'
+        for h in header_cells:
+            html += f"<th>{h}</th>"
+        html += "</tr></thead><tbody>"
+        for row in lines[2:]:
+            cells = [c.strip() for c in row.strip("|").split("|")]
+            html += "<tr>" + "".join(f"<td>{c}</td>" for c in cells) + "</tr>"
+        html += "</tbody></table>"
+        return html
+
+    tables_html = [md_table_to_html(t) for t in tables_md[:2] if md_table_to_html(t)]
+
+    # Intro paragraphs
+    lines = raw_md.splitlines()
+    intro_paras, current = [], []
+    for line in lines:
+        s = line.strip()
+        if (s.startswith("#") or s.startswith("<") or s.startswith("```") or
+                s.startswith("|") or s.startswith("![") or s.startswith("[![") or
+                s.startswith("---") or not s):
+            if current:
+                para = " ".join(current).strip()
+                if len(para) > 40:
+                    intro_paras.append(para)
+                current = []
+        else:
+            current.append(s)
+        if len(intro_paras) >= 3:
+            break
+    if current:
+        para = " ".join(current).strip()
+        if len(para) > 40:
+            intro_paras.append(para)
+
+    intro = " ".join(intro_paras[:3])[:600]
+    return {"intro": intro, "tables": tables_html, "images": images}
+
+
+@app.get("/api/readme")
+async def readme(owner: str = "", repo: str = ""):
+    """Fetch and parse a GitHub repository README for rich content display."""
+    if not owner or not repo:
+        return {"intro": "", "tables": [], "images": []}
+    async with httpx.AsyncClient(timeout=8) as client:
+        try:
+            r = await client.get(f"{GITHUB_API}/repos/{owner}/{repo}/readme", headers=_gh_headers())
+        except httpx.RequestError:
+            return {"intro": "", "tables": [], "images": []}
+        if r.status_code != 200:
+            return {"intro": "", "tables": [], "images": []}
+        data = r.json()
+        try:
+            raw_md = base64.b64decode(data.get("content", "")).decode("utf-8", errors="replace")
+        except Exception:
+            return {"intro": "", "tables": [], "images": []}
+    return _parse_readme(raw_md, owner, repo)
 
 
 # ── Health check ──────────────────────────────────────────────────────────────

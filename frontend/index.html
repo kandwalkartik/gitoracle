@@ -15,13 +15,14 @@
       --bg2:        #161b22;
       --bg3:        #21262d;
       --border:     #30363d;
-      --accent:     #7c3aed;
-      --accent2:    #a855f7;
-      --accent3:    #06b6d4;
+      --accent:     #2f81f7;
+      --accent2:    #4493f8;
+      --accent3:    #58a6ff;
       --text:       #e6edf3;
       --text-muted: #7d8590;
       --text-dim:   #484f58;
-      --green:      #3fb950;
+      --green:      #238636;
+      --green-hover:#2ea043;
       --yellow:     #d29922;
       --red:        #f85149;
       --radius:     12px;
@@ -54,11 +55,11 @@
     }
     .logo-icon {
       width: 32px; height: 32px; border-radius: 8px;
-      background: linear-gradient(135deg, var(--accent), var(--accent3));
+      background: var(--bg3); border: 1px solid var(--border);
       display: flex; align-items: center; justify-content: center;
       font-size: 16px;
     }
-    .logo-name { background: linear-gradient(135deg, #a78bfa, #67e8f9); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .logo-name { font-weight: 600; color: var(--text); }
     .header-tag {
       font-size: 12px; color: var(--text-muted); font-weight: 400;
       border: 1px solid var(--border); border-radius: 20px;
@@ -69,8 +70,7 @@
       font-size: 11px; padding: 3px 8px; border-radius: 20px;
       font-weight: 500; font-family: 'JetBrains Mono', monospace;
     }
-    .badge-groq { background: rgba(124,58,237,0.15); color: var(--accent2); border: 1px solid rgba(124,58,237,0.3); }
-    .badge-tools { background: rgba(6,182,212,0.1); color: var(--accent3); border: 1px solid rgba(6,182,212,0.25); }
+    .badge-tools { background: rgba(47,129,247,0.1); color: var(--accent); border: 1px solid rgba(47,129,247,0.25); }
 
     /* ── Chat area ── */
     #chat-area {
@@ -90,9 +90,8 @@
     }
     #welcome .hero-icon {
       width: 72px; height: 72px; border-radius: 20px; margin: 0 auto 20px;
-      background: linear-gradient(135deg, var(--accent), var(--accent3));
+      background: var(--bg2); border: 1px solid var(--border);
       display: flex; align-items: center; justify-content: center; font-size: 36px;
-      box-shadow: 0 0 40px rgba(124,58,237,0.4);
     }
     #welcome h1 { font-size: 32px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 10px; }
     #welcome p { color: var(--text-muted); font-size: 16px; margin-bottom: 36px; }
@@ -105,27 +104,32 @@
       border: 1px solid var(--border); background: var(--bg2); color: var(--text-muted);
       transition: all 0.2s ease; white-space: nowrap;
     }
-    .chip:hover { border-color: var(--accent2); color: var(--text); background: rgba(124,58,237,0.1); transform: translateY(-1px); }
+    .chip:hover { border-color: var(--accent); color: var(--text); background: rgba(47,129,247,0.1); transform: translateY(-1px); }
 
     /* Messages */
     .msg { margin-bottom: 20px; animation: fadeUp 0.3s ease; }
     .msg-user {
-      background: linear-gradient(135deg, rgba(124,58,237,0.15), rgba(6,182,212,0.1));
-      border: 1px solid rgba(124,58,237,0.25); border-radius: var(--radius);
+      background: var(--bg2);
+      border: 1px solid var(--border); border-radius: var(--radius);
       padding: 14px 18px; font-size: 15px;
     }
     .msg-user-label { font-size: 11px; color: var(--text-dim); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.8px; }
 
     .msg-agent { border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); }
     .msg-agent-header {
-      display: flex; align-items: center; gap: 10px; padding: 10px 16px;
-      background: var(--bg2); border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 16px; background: var(--bg2); border-bottom: 1px solid var(--border);
     }
-    .agent-avatar {
-      width: 28px; height: 28px; border-radius: 8px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 14px; font-weight: 700; flex-shrink: 0;
+    .msg-summary-label {
+      font-size: 12px; font-weight: 600; color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: 0.6px;
     }
+    .msg-gh-link {
+      font-size: 12px; color: var(--accent); text-decoration: none;
+      border: 1px solid rgba(47,129,247,0.3); border-radius: 6px;
+      padding: 3px 10px; transition: all 0.2s;
+    }
+    .msg-gh-link:hover { background: rgba(47,129,247,0.1); }
     .agent-name { font-size: 13px; font-weight: 600; }
     .agent-tag { font-size: 11px; color: var(--text-muted); margin-left: auto; font-family: 'JetBrains Mono', monospace; }
 
@@ -200,7 +204,7 @@
       cursor: pointer; transition: background 0.15s; border-bottom: 1px solid rgba(48,54,61,0.5);
     }
     .suggest-item:last-child { border-bottom: none; }
-    .suggest-item:hover, .suggest-item.selected { background: rgba(124,58,237,0.1); }
+    .suggest-item:hover, .suggest-item.selected { background: rgba(47,129,247,0.1); }
     .suggest-item-icon { font-size: 16px; flex-shrink: 0; }
     .suggest-item-info { flex: 1; min-width: 0; }
     .suggest-item-name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -222,11 +226,11 @@
 
     #send-btn {
       width: 50px; height: 50px; border-radius: var(--radius); border: none; cursor: pointer;
-      background: linear-gradient(135deg, var(--accent), var(--accent3));
+      background: var(--green);
       color: white; font-size: 20px; transition: all 0.2s ease;
       display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
-    #send-btn:hover { transform: scale(1.05); box-shadow: 0 4px 20px rgba(124,58,237,0.5); }
+    #send-btn:hover { background: var(--green-hover); transform: scale(1.05); box-shadow: 0 4px 15px rgba(46,160,67,0.3); }
     #send-btn:active { transform: scale(0.97); }
     #send-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 
@@ -243,6 +247,45 @@
       #input-area { padding: 12px 16px 16px; }
       #welcome h1 { font-size: 24px; }
     }
+    /* ── README rich card ── */
+    .readme-card {
+      border: 1px solid var(--border); border-radius: var(--radius);
+      overflow: hidden; margin-top: 12px; animation: fadeUp 0.4s ease;
+      background: var(--bg);
+    }
+    .readme-card-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 16px; background: var(--bg2); border-bottom: 1px solid var(--border);
+    }
+    .readme-card-title { font-size: 13px; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 8px; }
+    .readme-card-link {
+      font-size: 12px; color: var(--accent); text-decoration: none;
+      border: 1px solid rgba(47,129,247,0.3); border-radius: 6px;
+      padding: 3px 10px; transition: all 0.2s;
+    }
+    .readme-card-link:hover { background: rgba(47,129,247,0.1); }
+    .readme-card-body { padding: 14px 16px; display: flex; flex-direction: column; gap: 14px; }
+    .readme-intro { font-size: 13.5px; line-height: 1.7; color: var(--text-muted); }
+    .readme-images { display: flex; gap: 10px; flex-wrap: wrap; }
+    .readme-images img {
+      max-height: 160px; max-width: 100%; border-radius: 8px;
+      border: 1px solid var(--border); object-fit: contain; background: var(--bg2);
+      cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .readme-images img:hover { transform: scale(1.02); box-shadow: var(--shadow); }
+    .readme-table-wrap { overflow-x: auto; }
+    .readme-table {
+      width: 100%; border-collapse: collapse; font-size: 12.5px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .readme-table th {
+      background: var(--bg2); color: var(--text); padding: 7px 12px;
+      border: 1px solid var(--border); text-align: left; font-size: 12px;
+    }
+    .readme-table td {
+      padding: 6px 12px; border: 1px solid var(--border); color: var(--text-muted);
+    }
+    .readme-table tr:hover td { background: rgba(47,129,247,0.05); }
   </style>
 </head>
 <body>
@@ -256,7 +299,6 @@
       <span class="header-tag">GitHub Intelligence Oracle</span>
     </div>
     <div class="header-right">
-      <span class="badge badge-groq" id="model-badge">Groq · llama-3.3-70b</span>
       <span class="badge badge-tools">9 tools</span>
     </div>
   </header>
@@ -310,70 +352,37 @@
 // ── Config ───────────────────────────────────────────────────────────────────
 const API_BASE = window.location.origin;  // same server
 
-// ── Default example chips ────────────────────────────────────────────────────
-const DEFAULT_CHIPS = [
-  "Who is torvalds?",
-  "Tell me about microsoft/vscode",
-  "Trending Python AI repos",
-  "Compare langchain-ai/langchain with microsoft/autogen",
-  "Open issues in tensorflow/tensorflow",
-  "Latest release of openai/openai-python",
+// ── Trending repos ─────────────────────────────────────────────────────────────
+const TOP_REPOS = [
+  "torvalds/linux", "facebook/react", "tensorflow/tensorflow", "twbs/bootstrap",
+  "vuejs/vue", "django/django", "microsoft/vscode", "apple/swift", "golang/go",
+  "nodejs/node", "angular/angular", "ant-design/ant-design", "microsoft/TypeScript",
+  "flutter/flutter", "facebook/react-native", "kubernetes/kubernetes", "vercel/next.js",
+  "tailwindlabs/tailwindcss", "rust-lang/rust", "denoland/deno", "grafana/grafana",
+  "prometheus/prometheus", "elastic/elasticsearch", "bitcoin/bitcoin", "puppeteer/puppeteer",
+  "opencv/opencv", "electron/electron", "moby/moby", "spring-projects/spring-boot",
+  "laravel/laravel", "ruby/ruby", "huggingface/transformers", "langchain-ai/langchain",
+  "ollama/ollama", "AUTOMATIC1111/stable-diffusion-webui", "Significant-Gravitas/AutoGPT",
+  "ethereum/go-ethereum", "mrdoob/three.js", "d3/d3", "axios/axios", "expressjs/express",
+  "webpack/webpack", "reduxjs/redux", "mui/material-ui", "facebook/jest", "socketio/socket.io",
+  "pallets/flask", "keras-team/keras", "scikit-learn/scikit-learn", "numpy/numpy"
 ];
 
-// ── localStorage helpers ──────────────────────────────────────────────────────
-const LS_KEY = "gitoracle_history";
-
-function loadHistory() {
-  try { return JSON.parse(localStorage.getItem(LS_KEY) || "{}"); }
-  catch { return {}; }
-}
-
-function saveQuery(q) {
-  const h = loadHistory();
-  h.recent = h.recent || [];
-  h.freq   = h.freq   || {};
-  // Add to recent (dedup, max 10)
-  h.recent = [q, ...h.recent.filter(x => x !== q)].slice(0, 10);
-  // Increment frequency
-  h.freq[q] = (h.freq[q] || 0) + 1;
-  localStorage.setItem(LS_KEY, JSON.stringify(h));
-}
-
-function getSmartChips() {
-  const h = loadHistory();
-  const recent = h.recent || [];
-  const freq   = h.freq   || {};
-
-  if (recent.length === 0) return DEFAULT_CHIPS.slice(0, 4);
-
-  // Sort by frequency, take top 2
-  const top2 = Object.entries(freq)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 2)
-    .map(([q]) => q);
-
-  // Most recent unique (not already in top2)
-  const recent2 = recent.filter(q => !top2.includes(q)).slice(0, 2);
-
-  // Fill remaining with defaults
-  const all = [...new Set([...top2, ...recent2])];
-  const remaining = DEFAULT_CHIPS.filter(d => !all.includes(d));
-  return [...all, ...remaining].slice(0, 4);
+function getTrendingChips() {
+  const shuffled = [...TOP_REPOS].sort(() => 0.5 - Math.random());
+  return shuffled.slice(0, 5).map(repo => `Tell me about ${repo}`);
 }
 
 // ── Render chips ──────────────────────────────────────────────────────────────
 function renderChips() {
   const container = document.getElementById("chips-container");
   const label     = document.getElementById("chips-label");
-  const h = loadHistory();
-  const chips = getSmartChips();
-
-  if (h.recent && h.recent.length > 0) {
-    label.textContent = "💡 Based on your searches";
-  }
+  
+  label.textContent = "📈 TRENDING REPOSITORIES";
+  const chips = getTrendingChips();
 
   container.innerHTML = chips.map(c =>
-    `<div class="chip" onclick="sendQuery(${JSON.stringify(c)})">${c}</div>`
+    `<div class="chip" onclick='sendQuery(${JSON.stringify(c).replace(/'/g, "&#39;")})'>${c}</div>`
   ).join("");
 }
 
@@ -426,9 +435,8 @@ function appendLoading() {
   return d;
 }
 
-function appendAgentMsg(answer, toolCalls, agentName) {
-  const sp = getSpecialist(agentName);
-  const d  = document.createElement("div");
+function appendAgentMsg(answer, toolCalls, agentName, repoPath) {
+  const d = document.createElement("div");
   d.className = "message-wrap";
 
   const toolHTML = toolCalls && toolCalls.length > 0 ? `
@@ -445,18 +453,22 @@ function appendAgentMsg(answer, toolCalls, agentName) {
         </div>`).join("")}
     </div>` : "";
 
+  const ghLink = repoPath
+    ? `<a class="msg-gh-link" href="https://github.com/${escAttr(repoPath)}" target="_blank" rel="noopener">↗ See on GitHub</a>`
+    : "";
+
   d.innerHTML = `
     <div class="msg msg-agent">
       <div class="msg-agent-header">
-        <div class="agent-avatar ${sp.cls}">${sp.emoji}</div>
-        <span class="agent-name">${sp.label}</span>
-        <span class="agent-tag">GitOracle</span>
+        <span class="msg-summary-label">📝 Summary</span>
+        ${ghLink}
       </div>
       ${toolHTML}
       <div class="msg-agent-body">${escHtml(answer)}</div>
     </div>`;
   chatArea.appendChild(d);
   scrollBottom();
+  return d;
 }
 
 function toggleTool(header) {
@@ -470,6 +482,30 @@ async function sendQuery(q) {
   q = (q || input.value).trim();
   if (!q) return;
 
+  // Client-side off-topic guard
+  const lower = q.toLowerCase();
+  const githubKeywords = [
+    "repo", "repository", "github", "git", "developer", "dev", "org", "organisation",
+    "organization", "star", "fork", "issue", "release", "commit", "contributor",
+    "trending", "tell me about", "who is", "compare", "open issues", "latest release",
+    "pull request", "pr", "license", "language", "code", "source", "project", "package",
+    "npm", "pypi", "library", "framework", "open source", "opensource", "/"
+  ];
+  const hasGitHubContext = githubKeywords.some(kw => lower.includes(kw));
+  if (!hasGitHubContext) {
+    // Show a friendly redirect message without hitting the API
+    welcome.style.display = "none";
+    appendUserMsg(q);
+    appendAgentMsg(
+      "I'm GitOracle — I only answer questions about GitHub repositories, developers, and open-source projects.\n\nTry asking:\n• Tell me about torvalds/linux\n• Who is gvanrossum?\n• Trending Python AI repos\n• Compare facebook/react with vuejs/vue",
+      [], "GitOracle", null
+    );
+    input.value = "";
+    autoResize();
+    renderChips();
+    return;
+  }
+
   // Hide welcome
   welcome.style.display = "none";
 
@@ -480,7 +516,7 @@ async function sendQuery(q) {
 
   appendUserMsg(q);
   const loader = appendLoading();
-  saveQuery(q);
+  // We no longer save query history to localStorage for chips, but we re-render trending
   renderChips();
 
   try {
@@ -499,7 +535,15 @@ async function sendQuery(q) {
     }
 
     const data = await res.json();
-    appendAgentMsg(data.answer, data.tool_calls || [], data.agent || "GitOracle");
+    // Try to extract owner/repo from query for GitHub link + README card
+    const repoMatch = q.match(/(?:about|for|on)\s+([\w.-]+)\/([\w.-]+)/i)
+                   || q.match(/^([\w.-]+)\/([\w.-]+)$/);
+    const repoPath = repoMatch ? `${repoMatch[1]}/${repoMatch[2]}` : null;
+    const msgWrap = appendAgentMsg(data.answer, data.tool_calls || [], data.agent || "GitOracle", repoPath);
+
+    if (repoPath) {
+      fetchReadmeCard(repoMatch[1], repoMatch[2], msgWrap);
+    }
 
   } catch (e) {
     loader.remove();
@@ -508,6 +552,42 @@ async function sendQuery(q) {
     sendBtn.disabled = false;
     input.focus();
   }
+}
+
+// ── README rich card ─────────────────────────────────────────────────────────
+async function fetchReadmeCard(owner, repo, msgWrap) {
+  try {
+    const r = await fetch(`${API_BASE}/api/readme?owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}`);
+    if (!r.ok) return;
+    const d = await r.json();
+    if (!d.intro && !d.images.length && !d.tables.length) return;
+
+    const card = document.createElement("div");
+    card.className = "readme-card";
+
+    let bodyHTML = "";
+    if (d.intro) {
+      bodyHTML += `<div class="readme-intro">${renderMarkdown(d.intro)}</div>`;
+    }
+    if (d.images && d.images.length > 0) {
+      bodyHTML += `<div class="readme-images">${
+        d.images.map(img => `<img src="${escAttr(img.src)}" alt="${escAttr(img.alt)}" loading="lazy" onerror="this.style.display='none'" />`).join("")
+      }</div>`;
+    }
+    if (d.tables && d.tables.length > 0) {
+      bodyHTML += d.tables.map(t => `<div class="readme-table-wrap">${t}</div>`).join("");
+    }
+
+    card.innerHTML = `
+      <div class="readme-card-header">
+        <div class="readme-card-title">📄 README · ${escHtml(owner)}/${escHtml(repo)}</div>
+        <a class="readme-card-link" href="https://github.com/${escAttr(owner)}/${escAttr(repo)}" target="_blank" rel="noopener">↗ View on GitHub</a>
+      </div>
+      <div class="readme-card-body">${bodyHTML}</div>
+    `;
+    msgWrap.appendChild(card);
+    scrollBottom();
+  } catch {}
 }
 
 // ── Smart suggest dropdown ───────────────────────────────────────────────────
@@ -575,7 +655,6 @@ function renderDropdown(data) {
 
 function selectRepo(fullName) {
   closeDropdown();
-  // Instantly ask GitOracle about the repo
   sendQuery(`Tell me about ${fullName}`);
 }
 
@@ -651,15 +730,26 @@ function escHtml(s) {
 }
 function escAttr(s) { return String(s).replace(/'/g,"\\'"); }
 
+// Convert basic markdown to safe HTML (links, bold, italic, inline code)
+function renderMarkdown(s) {
+  s = String(s)
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  // [text](url) → <a>
+  s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g,
+    '<a href="$2" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:underline;">$1</a>');
+  // **bold**
+  s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  // *italic*
+  s = s.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+  // `code`
+  s = s.replace(/`([^`]+)`/g, '<code style="background:var(--bg3);padding:1px 5px;border-radius:4px;font-family:JetBrains Mono,monospace;font-size:12px;">$1</code>');
+  return s;
+}
+
 // ── Fetch model info from /health ────────────────────────────────────────────
 async function fetchHealth() {
   try {
-    const r = await fetch(`${API_BASE}/health`);
-    if (r.ok) {
-      const d = await r.json();
-      const badge = document.getElementById("model-badge");
-      if (badge) badge.textContent = `${d.backend} · ${(d.model||"").split("-").slice(0,3).join("-")}`;
-    }
+    await fetch(`${API_BASE}/health`);
   } catch {}
 }
 
