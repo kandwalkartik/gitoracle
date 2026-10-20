@@ -1,7 +1,9 @@
 # GitOracle — GitHub Intelligence Oracle
 ### IBM AI Developer Capstone Project
 
-GitOracle is a production-quality agentic AI system that answers questions about any public GitHub repository using natural language. Powered by a real MCP (Model Context Protocol) server, a ReAct agent with Human-in-the-Loop approval, and a LangGraph multi-agent router with four named specialists.
+GitOracle answers questions about public GitHub repositories in natural language. It combines a custom MCP (Model Context Protocol) server, a ReAct agent with human approval for selected actions, and a LangGraph router with four specialist agents.
+
+**Problem:** Finding repository details across README files, issues, releases, and contributor activity takes several separate GitHub searches. GitOracle brings those sources into one question-and-answer workflow.
 
 ---
 
@@ -49,11 +51,13 @@ User Input
 
 ### 1. Install dependencies
 ```bash
+python -m venv .venv
+# Activate .venv for your shell, then:
 pip install -r requirements.txt
 ```
 
 ### 2. Configure environment
-Open `.env` and fill in your values:
+Copy `.env.example` to `.env`, then fill in your values:
 ```
 GITHUB_TOKEN=ghp_your_token_here      # optional but recommended (5,000 req/hr)
 LLM_BACKEND=groq                      # "groq" (cloud) or "ollama" (local)
@@ -82,17 +86,24 @@ python cli.py multi    # Multi-Agent LangGraph (4 specialists)
 
 ---
 
-## MCP Tools (7 total)
+### Web demo
+
+Run `python api_server.py` and open `http://localhost:8000` to use the local web interface. This demo still needs a configured LLM backend for agent answers.
+
+## MCP Tools (10 total)
 
 | Tool | Description |
 |---|---|
 | `search_repositories` | Search GitHub repos by keyword, topic, or language |
 | `get_repo_details` | Stars, forks, language, license, topics, homepage |
+| `get_repo_readme` | README content for a public repository |
 | `list_open_issues` | Currently open issues with labels and assignees |
 | `list_contributors` | Top contributors by commit count |
 | `get_latest_release` | Latest release tag, date, and notes |
 | `get_repo_commits` | Recent commit history with author and message |
 | `compare_repos` | Side-by-side metric comparison of two repositories |
+| `get_user_profile` | Public GitHub user details |
+| `get_org_details` | Public GitHub organization details |
 
 ---
 
@@ -118,7 +129,7 @@ IBM cert/
 ├── cache.py                ← GitHub API TTL cache
 ├── conversation_store.py   ← Session persistence
 │
-├── mcp_server.py           ← Phase 1: MCP server (7 tools, 2 prompts)
+├── mcp_server.py           ← Phase 1: MCP server (10 tools, 2 prompts)
 ├── mcp_client_test.py      ← Phase 1: Protocol test
 │
 ├── model_client.py         ← Phase 2: LLM connector (Ollama/Groq)
@@ -159,3 +170,10 @@ IBM cert/
 | Ollama connection refused | Run `ollama serve` first |
 | Groq 401 Unauthorized | Check `GROQ_API_KEY` in `.env` |
 | History lost on restart | Saved automatically to `sessions/` |
+
+## Verification and limitations
+
+- `python cli.py health` checks service connectivity. `python cli.py test` exercises the MCP protocol and nine tool calls; it does not test every agent response or the web interface.
+- Answers depend on the availability and rate limits of the GitHub API and the configured LLM backend. Review generated answers against the linked repository before relying on them.
+- GitHub responses are cached in memory for 60 seconds by default, so recent repository changes can take a short time to appear.
+- The project does not include a committed screenshot gallery or a hosted demo. Use the local web interface above to inspect it.
